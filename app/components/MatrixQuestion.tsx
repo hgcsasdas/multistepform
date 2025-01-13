@@ -1,19 +1,12 @@
 interface Question {
   id: number;
-
   text: string;
-
   type: string;
-
   field: string;
-
-  nextStep: number | ((responses: string) => number);
-
-  options?: { label: string; value: string }[];
-
   topics?: string[];
-
   levels?: string[];
+  options?: { label: string; value: string }[];
+  nextStep: number | ((responses: string) => number);
 }
 
 interface MatrixQuestionProps {

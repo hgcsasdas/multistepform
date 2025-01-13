@@ -156,21 +156,21 @@ export const QUESTIONS = [
   {
     id: 13,
     text: 'Responde a las siguientes preguntas de Verdadero o Falso:',
-    type: 'trueFalseMatrix',
+    type: 'checkbox',
     field: 'true_false_questions',
-    statements: [
-      'La marcha atrás es un método bastante seguro',
-      'Si se lava con cuidado podemos usar el preservativo varias veces',
-      'Para utilizar anticonceptivos hormonales se ha de acudir a un centro sanitario',
-      'Tener relaciones sexuales completas (con penetración) durante la regla minimiza el riesgo de embarazo',
-      'Las pastillas anticonceptivas son eficaces si se toman antes de cada relación',
-      'Tomar la píldora protege frente a las ITS',
-      'El único método anticonceptivo que protege de las ITS es el preservativo',
-      'Si la persona con la que mantengo relaciones sexuales tiene una higiene adecuada hay poca probabilidad de que me contagie una ITS',
-      'EL VIH y VHC (Virus de la Hepatitis C) solo se transmiten a través de relaciones sexuales'
+    options: [
+      { label: 'La marcha atrás es un método bastante seguro', value: 'statement_1' },
+      { label: 'Si se lava con cuidado podemos usar el preservativo varias veces', value: 'statement_2' },
+      { label: 'Para utilizar anticonceptivos hormonales se ha de acudir a un centro sanitario', value: 'statement_3' },
+      { label: 'Tener relaciones sexuales completas (con penetración) durante la regla minimiza el riesgo de embarazo', value: 'statement_4' },
+      { label: 'Las pastillas anticonceptivas son eficaces si se toman antes de cada relación', value: 'statement_5' },
+      { label: 'Tomar la píldora protege frente a las ITS', value: 'statement_6' },
+      { label: 'El único método anticonceptivo que protege de las ITS es el preservativo', value: 'statement_7' },
+      { label: 'Si la persona con la que mantengo relaciones sexuales tiene una higiene adecuada hay poca probabilidad de que me contagie una ITS', value: 'statement_8' },
+      { label: 'EL VIH y VHC (Virus de la Hepatitis C) solo se transmiten a través de relaciones sexuales', value: 'statement_9' }
     ],
     nextStep: 22,
-  },
+  },  
   {
     id: 22,
     text: '¿Sabes qué es la PrEP (profilaxis pre-exposición)?',

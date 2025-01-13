@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { QUESTIONS } from '../lib/questions';
-import Cookies from 'js-cookie';
-import TextQuestion from './TextQuestion';
-import RadioQuestion from './RadioQuestion';
-import MatrixQuestion from './MatrixQuestion';
+import React, { useState } from "react";
+import { QUESTIONS } from "../lib/questions";
+import Cookies from "js-cookie";
+import TextQuestion from "./TextQuestion";
+import RadioQuestion from "./RadioQuestion";
+import MatrixQuestion from "./MatrixQuestion";
+import CheckboxQuestion from "./CheckBoxQuestions";
 
 interface FormResponses {
   [key: string]: any;
@@ -12,53 +13,59 @@ interface FormResponses {
 const MultiStepForm = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [responses, setResponses] = useState<FormResponses>({});
-  const [tempResponse, setTempResponse] = useState<{ [key: string]: any } | null>(null);
+  const [tempResponse, setTempResponse] = useState<{
+    [key: string]: any;
+  } | null>(null);
 
   const handleSaveResponse = () => {
     if (tempResponse !== null) {
       const updatedResponses = { ...responses, ...(typeof tempResponse === 'object' ? tempResponse : {}) };
-  
+
       // Validación antes de guardar
       if (!validateResponse(updatedResponses)) {
         return; // Si no es válido, no avanzamos
       }
-  
+
       // Guardar las respuestas en cookies
       console.log('Datos del formulario:', JSON.stringify(updatedResponses, null, 2));
-  
+
       setResponses(updatedResponses);
       Cookies.set('survey_responses', JSON.stringify(updatedResponses), { expires: 7 });
       setTempResponse(null);
-  
+
       // Evaluación de nextStep
       const currentQuestion = QUESTIONS.find((q) => q.id === currentStep);
       const nextStep = currentQuestion?.nextStep;
-  
-      console.log('nextStep:', nextStep);
-  
+
+
       if (nextStep) {
         const nextStepValue = typeof nextStep === 'function'
           ? nextStep(updatedResponses[currentQuestion.field])
           : nextStep;
-  
-        console.log('nextStep value after update:', nextStepValue);
-  
+
+
         // Avanzar al siguiente paso
         setCurrentStep(nextStepValue);
       }
     }
   };
-  
-
   const validateResponse = (responses: FormResponses) => {
     const question = QUESTIONS.find((q) => q.id === currentStep);
     if (!question) return true;
 
     const response = responses[question.field];
-    
-    if (question.type === 'text') {
-      if (question.field === 'age' && isNaN(Number(response))) {
-        alert('Por favor, ingrese un número válido para la edad.');
+
+    // Validaciones personalizadas según el tipo de pregunta
+    if (question.type === "text") {
+      if (question.field === "age" && isNaN(Number(response))) {
+        alert("Por favor, ingrese un número válido para la edad.");
+        return false;
+      }
+    }
+
+    if (question.type === 'checkbox') {
+      if (typeof response !== 'object' || Object.keys(response).length === 0) {
+        alert('Por favor, seleccione al menos una opción.');
         return false;
       }
     }
@@ -72,7 +79,7 @@ const MultiStepForm = () => {
     if (!question) return <p>Gracias por completar el formulario.</p>;
 
     switch (question.type) {
-      case 'text':
+      case "text":
         return (
           <TextQuestion
             question={question}
@@ -81,7 +88,7 @@ const MultiStepForm = () => {
             }
           />
         );
-      case 'radio':
+      case "radio":
         return (
           <RadioQuestion
             question={question}
@@ -90,21 +97,35 @@ const MultiStepForm = () => {
             }
           />
         );
-      case 'matrix':
+      case "matrix":
         return (
           <MatrixQuestion
             question={question}
             setTempResponse={(value) =>
               setTempResponse((prevResponses) => ({
-                  ...prevResponses,
-                  [question.field]: {
-                    ...(prevResponses?.[question.field] || {}),
-                    ...value,
-                  },
-                }))
+                ...prevResponses,
+                [question.field]: {
+                  ...(prevResponses?.[question.field] || {}),
+                  ...value,
+                },
+              }))
             }
           />
         );
+        case 'checkbox':
+          return (
+            <CheckboxQuestion
+              question={question}
+              setTempResponse={(field, value) => {
+                setTempResponse((prevResponses) => ({
+                  ...prevResponses,
+                  [field]: value, // Directly set the response
+                }));
+              }}
+              savedResponse={responses[question.field]} // Optional: pre-fill with previous response
+            />
+          );
+
       default:
         return null;
     }

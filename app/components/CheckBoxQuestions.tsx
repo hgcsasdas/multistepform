@@ -1,48 +1,84 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
-interface CheckboxQuestionProps {
-  question: {
-    text: string;
-    options: Array<{
-      label: string;
-      value: string;
-    }>;
-  };
-  setTempResponse: (values: string[]) => void;
+interface CheckboxOption {
+  label: string;
+  value: string;
 }
 
-const CheckboxQuestion: React.FC<CheckboxQuestionProps> = ({ question, setTempResponse }) => {
-  const [selectedValues, setSelectedValues] = React.useState<string[]>([]);
+interface Question {
+  id: number;
+  text: string;
+  type: string;
+  field: string;
+  options?: CheckboxOption[];
+  nextStep: number | ((responses: string) => number);
+}
 
-  const handleChange = (value: string) => {
-    const newValues = selectedValues.includes(value)
-      ? selectedValues.filter(v => v !== value)
-      : [...selectedValues, value];
-    
-    setSelectedValues(newValues);
-    setTempResponse(newValues);
+interface CheckboxQuestionProps {
+  question: Question;
+  setTempResponse: (field: string, value: Record<string, boolean>) => void;
+  savedResponse?: Record<string, boolean>; // Respuestas guardadas
+}
+
+const CheckboxQuestion: React.FC<CheckboxQuestionProps> = ({
+  question,
+  setTempResponse,
+  savedResponse = {},
+}) => {
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, boolean>>(
+    savedResponse || {}
+  );
+
+  const handleRadioChange = (value: string, isTrue: boolean) => {
+    setSelectedOptions((prev) => ({
+      ...prev,
+      [value]: isTrue,
+    }));
   };
 
+  // Este componente ya no maneja el paso siguiente, lo hace el MultiStepForm
+  useEffect(() => {
+    // Guardar las respuestas en el paso actual
+    setTempResponse(question.field, selectedOptions);
+  }, [selectedOptions, question.field, setTempResponse]);
+
   return (
-    <div className="mb-6">
-      <label className="block text-lg font-medium text-gray-700 mb-4">
-        {question.text}
-      </label>
-      {question.options.map((option) => (
-        <div key={option.value} className="mb-2">
-          <label className="flex items-center space-x-3 text-gray-700">
-            <input
-              type="checkbox"
-              checked={selectedValues.includes(option.value)}
-              onChange={() => handleChange(option.value)}
-              className="text-blue-500 focus:ring-blue-400"
-            />
-            <span>{option.label}</span>
-          </label>
-        </div>
-      ))}
+    <div className="checkbox-question">
+      <h2 className="text-lg font-medium">{question.text}</h2>
+      <table className="w-full table-auto border-collapse">
+        <thead className="bg-gray-200">
+          <tr>
+            <th className="p-2 text-left">Opción</th>
+            <th className="p-2 text-center">Verdadero</th>
+            <th className="p-2 text-center">Falso</th>
+          </tr>
+        </thead>
+        <tbody>
+          {question.options?.map((option) => (
+            <tr key={option.value}>
+              <td className="border p-2">{option.label}</td>
+              <td className="border p-2 text-center">
+                <input
+                  type="radio"
+                  name={option.value}
+                  checked={selectedOptions[option.value] === true}
+                  onChange={() => handleRadioChange(option.value, true)}
+                />
+              </td>
+              <td className="border p-2 text-center">
+                <input
+                  type="radio"
+                  name={option.value}
+                  checked={selectedOptions[option.value] === false}
+                  onChange={() => handleRadioChange(option.value, false)}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
 
-export { CheckboxQuestion };
+export default CheckboxQuestion;
