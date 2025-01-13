@@ -20,19 +20,23 @@ interface MatrixQuestionProps {
   question: Question;
   setTempResponse: (response: Record<string, any>) => void;
 }
-
 const MatrixQuestion: React.FC<MatrixQuestionProps> = ({
   question,
   setTempResponse,
 }) => {
   const handleMatrixChange = (topic: string, value: string) => {
-    setTempResponse((prevResponses: { [x: string]: any }) => ({
-      ...prevResponses,
-      [question.field]: {
-        ...prevResponses[question.field],
-        [topic]: value, // Guardamos la respuesta como un objeto con el nombre del tema
-      },
-    }));
+    // Actualizamos las respuestas de la matriz, combinando las anteriores respuestas con la nueva
+    setTempResponse((prevResponses: { [x: string]: any }) => {
+      const updatedFieldResponses = {
+        ...(prevResponses[question.field] || {}),
+        [topic]: value, // Guardamos el valor seleccionado para el tema
+      };
+        console.log(prevResponses);
+      return {
+        ...prevResponses,
+        [question.field]: updatedFieldResponses,
+      };
+    });
   };
 
   return (
@@ -65,7 +69,7 @@ const MatrixQuestion: React.FC<MatrixQuestionProps> = ({
                     name={`${question.field}_${index}`}
                     value={level}
                     className="text-blue-500 focus:ring-blue-400"
-                    onChange={() => handleMatrixChange(topic, level)} // Ahora se pasa el nombre del tema (topic)
+                    onChange={() => handleMatrixChange(topic, level)} // Guardar el valor con el nombre del tema
                   />
                 </td>
               ))}

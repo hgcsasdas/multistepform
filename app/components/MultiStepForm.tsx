@@ -17,36 +17,38 @@ const MultiStepForm = () => {
   const handleSaveResponse = () => {
     if (tempResponse !== null) {
       const updatedResponses = { ...responses, ...(typeof tempResponse === 'object' ? tempResponse : {}) };
-
+  
       // Validación antes de guardar
       if (!validateResponse(updatedResponses)) {
         return; // Si no es válido, no avanzamos
       }
-
+  
+      // Guardar las respuestas en cookies
       console.log('Datos del formulario:', JSON.stringify(updatedResponses, null, 2));
-
+  
       setResponses(updatedResponses);
       Cookies.set('survey_responses', JSON.stringify(updatedResponses), { expires: 7 });
       setTempResponse(null);
-
+  
+      // Evaluación de nextStep
       const currentQuestion = QUESTIONS.find((q) => q.id === currentStep);
       const nextStep = currentQuestion?.nextStep;
-
+  
       console.log('nextStep:', nextStep);
-
-      // Evaluar nextStep correctamente con el valor actualizado
+  
       if (nextStep) {
         const nextStepValue = typeof nextStep === 'function'
           ? nextStep(updatedResponses[currentQuestion.field])
           : nextStep;
-
+  
         console.log('nextStep value after update:', nextStepValue);
-
-        // Avanzar al siguiente paso correctamente
+  
+        // Avanzar al siguiente paso
         setCurrentStep(nextStepValue);
       }
     }
   };
+  
 
   const validateResponse = (responses: FormResponses) => {
     const question = QUESTIONS.find((q) => q.id === currentStep);
