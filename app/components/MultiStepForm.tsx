@@ -101,11 +101,11 @@ const MultiStepForm = () => {
         return (
           <MatrixQuestion
             question={question}
-            setTempResponse={(value) =>
-              setTempResponse((prevResponses) => ({
+            setTempResponse={(field, value) =>
+              setTempResponse((prevResponses = {}) => ({
                 ...prevResponses,
-                [question.field]: {
-                  ...(prevResponses?.[question.field] || {}),
+                [field]: {
+                  ...(prevResponses?.[field] || {}),
                   ...value,
                 },
               }))

@@ -1,36 +1,46 @@
+import React, { useState, useEffect } from 'react';
+
+interface MatrixOption {
+  label: string;
+  value: string;
+}
+
 interface Question {
   id: number;
   text: string;
   type: string;
   field: string;
-  topics?: string[];
-  levels?: string[];
-  options?: { label: string; value: string }[];
+  topics?: string[]; // Lista de temas de la matriz
+  levels?: string[]; // Lista de niveles de la matriz
   nextStep: number | ((responses: string) => number);
 }
 
 interface MatrixQuestionProps {
   question: Question;
-  setTempResponse: (response: Record<string, any>) => void;
+  setTempResponse: (field: string, value: Record<string, any>) => void;
+  savedResponse?: Record<string, any>; // Respuestas guardadas
 }
+
 const MatrixQuestion: React.FC<MatrixQuestionProps> = ({
   question,
   setTempResponse,
+  savedResponse = {},
 }) => {
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(
+    savedResponse || {}
+  );
+
   const handleMatrixChange = (topic: string, value: string) => {
-    // Actualizamos las respuestas de la matriz, combinando las anteriores respuestas con la nueva
-    setTempResponse((prevResponses: { [x: string]: any }) => {
-      const updatedFieldResponses = {
-        ...(prevResponses[question.field] || {}),
-        [topic]: value, // Guardamos el valor seleccionado para el tema
-      };
-        console.log(prevResponses);
-      return {
-        ...prevResponses,
-        [question.field]: updatedFieldResponses,
-      };
-    });
+    setSelectedOptions((prev) => ({
+      ...prev,
+      [topic]: value, // Guardamos el valor seleccionado para el tema
+    }));
   };
+
+  // Guardar las respuestas en el paso actual
+  useEffect(() => {
+    setTempResponse(question.field, selectedOptions);
+  }, [selectedOptions, question.field, setTempResponse]);
 
   return (
     <div>
@@ -59,8 +69,9 @@ const MatrixQuestion: React.FC<MatrixQuestionProps> = ({
                 >
                   <input
                     type="radio"
-                    name={`${question.field}_${index}`}
+                    name={`${question.field}_${topic}`} // Cambié el nombre del input para que sea único por tema
                     value={level}
+                    checked={selectedOptions[topic] === level}
                     className="text-blue-500 focus:ring-blue-400"
                     onChange={() => handleMatrixChange(topic, level)} // Guardar el valor con el nombre del tema
                   />
