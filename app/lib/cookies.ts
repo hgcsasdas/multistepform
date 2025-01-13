@@ -1,25 +1,18 @@
 import Cookies from 'js-cookie';
-import { FormStep } from '../types';
 
-const FORM_DATA_COOKIE = 'form_data';
-const COOKIE_EXPIRY = 7; // Days
-
-export function saveFormData(data: FormStep) {
-  Cookies.set(FORM_DATA_COOKIE, JSON.stringify(data), { expires: COOKIE_EXPIRY });
+interface FormData {
+  [key: string]: any;
 }
 
-export function getFormData(): FormStep | null {
-  const data = Cookies.get(FORM_DATA_COOKIE);
-  if (data) {
-    try {
-      return JSON.parse(data);
-    } catch {
-      return null;
-    }
-  }
-  return null;
-}
+export const saveFormData = (data: FormData): void => {
+  Cookies.set('formData', JSON.stringify(data));
+};
 
-export function clearFormData() {
-  Cookies.remove(FORM_DATA_COOKIE);
-}
+export const getFormData = () => {
+  const data = Cookies.get('formData');
+  return data ? JSON.parse(data) : null;
+};
+
+export const clearFormData = () => {
+  Cookies.remove('formData');
+};

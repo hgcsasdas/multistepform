@@ -1,111 +1,124 @@
-'use client';
-
+import React, { useState } from 'react';
+import { QUESTIONS } from '../lib/questions';
 import Cookies from 'js-cookie';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import {
-  FormStep,
-  FormData,
-  COURSES,
-  FREQUENCY_OPTIONS,
-  CONSULT_SOURCES,
-} from '../types';
-import { saveFormData, getFormData, clearFormData } from '../lib/cookies';
+import TextQuestion from './TextQuestion';
+import RadioQuestion from './RadioQuestion';
+import MatrixQuestion from './MatrixQuestion';
 
-export default function MultiStepForm() {
-  const router = useRouter();
-  const [formState, setFormState] = useState<FormStep>({
-    currentStep: 1,
-    sessionId: null,
-    formData: {},
-    completed: false,
-  });
-
-  useEffect(() => {
-    // Check if form was already completed
-    const completed = Cookies.get('formCompleted');
-    if (completed) {
-      router.push('/completed');
-      return;
-    }
-
-    // Load saved form data
-    const savedData = getFormData();
-    if (savedData) {
-      setFormState(savedData);
-    }
-  }, [router]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      // If it's the last step, submit all data
-      if (isLastStep()) {
-        const response = await fetch('/api/submit', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            sessionId: formState.sessionId,
-            data: formState.formData,
-          }),
-        });
-
-        if (response.ok) {
-          // Clear form data and mark as completed
-          clearFormData();
-          Cookies.set('formCompleted', 'true', { expires: 30 }); // Expires in 30 days
-          router.push('/completed');
-          return;
-        }
-      }
-
-      // Handle branching logic
-      let nextStep = formState.currentStep + 1;
-
-      if (formState.currentStep === 4) {
-        // After consult source question
-        if (!formState.formData.consultSource?.includes('other')) {
-          nextStep = 6; // Skip the "specify other" question
-        }
-      }
-
-      if (formState.currentStep === 9) {
-        // After pornography question
-        if (!formState.formData.seenPornography) {
-          nextStep = 11; // Skip the age question
-        }
-      }
-
-      // Update form state and save to cookie
-      const newState = {
-        ...formState,
-        currentStep: nextStep,
-      };
-      setFormState(newState);
-      saveFormData(newState);
-    } catch (error) {
-      console.error('Error submitting form:', error);
-    }
-  };
-
-  const isLastStep = () => {
-    return formState.currentStep === 26;
-  };
-
-  const updateFormData = (field: string, value: any) => {
-    const newState = {
-      ...formState,
-      formData: {
-        ...formState.formData,
-        [field]: value,
-      },
-    };
-    setFormState(newState);
-    saveFormData(newState);
-  };
-
-  // Rest of the component remains the same...
+interface FormResponses {
+  [key: string]: any;
 }
+
+const MultiStepForm = () => {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [responses, setResponses] = useState<FormResponses>({});
+  const [tempResponse, setTempResponse] = useState<{ [key: string]: any } | null>(null);
+
+  const handleSaveResponse = () => {
+    if (tempResponse !== null) {
+      const updatedResponses = { ...responses, ...(typeof tempResponse === 'object' ? tempResponse : {}) };
+
+      // Validación antes de guardar
+      if (!validateResponse(updatedResponses)) {
+        return; // Si no es válido, no avanzamos
+      }
+
+      console.log('Datos del formulario:', JSON.stringify(updatedResponses, null, 2));
+
+      setResponses(updatedResponses);
+      Cookies.set('survey_responses', JSON.stringify(updatedResponses), { expires: 7 });
+      setTempResponse(null);
+
+      const currentQuestion = QUESTIONS.find((q) => q.id === currentStep);
+      const nextStep = currentQuestion?.nextStep;
+
+      console.log('nextStep:', nextStep);
+
+      // Evaluar nextStep correctamente con el valor actualizado
+      if (nextStep) {
+        const nextStepValue = typeof nextStep === 'function'
+          ? nextStep(updatedResponses[currentQuestion.field])
+          : nextStep;
+
+        console.log('nextStep value after update:', nextStepValue);
+
+        // Avanzar al siguiente paso correctamente
+        setCurrentStep(nextStepValue);
+      }
+    }
+  };
+
+  const validateResponse = (responses: FormResponses) => {
+    const question = QUESTIONS.find((q) => q.id === currentStep);
+    if (!question) return true;
+
+    const response = responses[question.field];
+    
+    if (question.type === 'text') {
+      if (question.field === 'age' && isNaN(Number(response))) {
+        alert('Por favor, ingrese un número válido para la edad.');
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const renderQuestion = () => {
+    const question = QUESTIONS.find((q) => q.id === currentStep);
+
+    if (!question) return <p>Gracias por completar el formulario.</p>;
+
+    switch (question.type) {
+      case 'text':
+        return (
+          <TextQuestion
+            question={question}
+            setTempResponse={(value: any) =>
+              setTempResponse({ [question.field]: value })
+            }
+          />
+        );
+      case 'radio':
+        return (
+          <RadioQuestion
+            question={question}
+            setTempResponse={(value: any) =>
+              setTempResponse({ [question.field]: value })
+            }
+          />
+        );
+      case 'matrix':
+        return (
+          <MatrixQuestion
+            question={question}
+            setTempResponse={(value) =>
+              setTempResponse((prevResponses) => ({
+                  ...prevResponses,
+                  [question.field]: {
+                    ...(prevResponses?.[question.field] || {}),
+                    ...value,
+                  },
+                }))
+            }
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div>
+      {renderQuestion()}
+      <button
+        onClick={handleSaveResponse}
+        className="bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors mt-4"
+      >
+        Siguiente
+      </button>
+    </div>
+  );
+};
+
+export default MultiStepForm;
